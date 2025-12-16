@@ -132,6 +132,10 @@
   ansible.builtin.debug:
     var: storage_class
 
+- name: HARDCODE STORAGE CLASS
+  ansible.builtin.set_fact:
+    storage_class: "ocs-external-storagecluster-ceph-rbd"
+
 - name: Create DataVolume for VM root disk
   kubernetes.core.k8s:
     apply: true
