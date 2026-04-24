@@ -9,7 +9,7 @@
         namespace: "{{ hosted_cluster_namespace }}"
         labels: "{{ hosted_cluster_default_cluster_order_label }}"
       data:
-        .dockerconfigjson: "{{ hosted_cluster_settings.pull_secret | to_json | b64encode }}"
+        .dockerconfigjson: "{{ hosted_cluster_settings.pull_secret | b64encode }}"
       type: kubernetes.io/dockerconfigjson
   no_log: true
 
@@ -113,7 +113,7 @@
             'type': 'Agent',
             'agent': {
               'agentLabelSelector': {
-                'matchLabels': {agent_resource_class_label: item.resourceClass} | combine(hosted_cluster_default_cluster_order_label)
+                'matchLabels': {agent_resource_class_label: item.resourceClass} | combine({'osac.openshift.io/bare-metal-pool-id': hosted_cluster_baremetalpool_uid})
               }
             }
           },

@@ -1,7 +1,7 @@
 - name: Get list of existing NetworkClass resources
   ansible.builtin.uri:
     url: "{{ publish_templates_network_class_api_endpoint }}"
-    validate_certs: "{{ publish_templates_validate_certs | default(true) | bool }}"
+    validate_certs: "{{ publish_templates_validate_certs | default(false) | bool }}"
     headers:
       authorization: Bearer {{ osac_fulfillment_service_token }}
   register: publish_templates_network_class_check
@@ -25,7 +25,7 @@
     network_class.implementation_strategy in publish_templates_network_class_strategy_to_id
   ansible.builtin.uri:
     url: "{{ publish_templates_network_class_api_endpoint }}/{{ publish_templates_network_class_strategy_to_id[network_class.implementation_strategy] }}"
-    validate_certs: "{{ publish_templates_validate_certs | default(true) | bool }}"
+    validate_certs: "{{ publish_templates_validate_certs | default(false) | bool }}"
     method: PATCH
     headers:
       authorization: Bearer {{ osac_fulfillment_service_token }}
@@ -42,7 +42,7 @@
     network_class.implementation_strategy not in publish_templates_network_class_strategy_to_id
   ansible.builtin.uri:
     url: "{{ publish_templates_network_class_api_endpoint }}"
-    validate_certs: "{{ publish_templates_validate_certs | default(true) | bool }}"
+    validate_certs: "{{ publish_templates_validate_certs | default(false) | bool }}"
     method: POST
     headers:
       authorization: Bearer {{ osac_fulfillment_service_token }}

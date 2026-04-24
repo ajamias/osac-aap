@@ -1,7 +1,7 @@
 - name: Get list of existing cluster templates
   ansible.builtin.uri:
     url: "{{ publish_templates_cluster_api_endpoint }}"
-    validate_certs: "{{ publish_templates_validate_certs | default(true) | bool }}"
+    validate_certs: "{{ publish_templates_validate_certs | default(false) | bool }}"
     headers:
       authorization: Bearer {{ osac_fulfillment_service_token }}
   register: cluster_template_check
@@ -22,7 +22,7 @@
   when: cluster_template_ids is defined and template.id in cluster_template_ids
   ansible.builtin.uri:
     url: "{{ publish_templates_cluster_api_endpoint }}/{{ template.id }}"
-    validate_certs: "{{ publish_templates_validate_certs | default(true) | bool }}"
+    validate_certs: "{{ publish_templates_validate_certs | default(false) | bool }}"
     method: PATCH
     headers:
       authorization: Bearer {{ osac_fulfillment_service_token }}
@@ -37,7 +37,7 @@
   when: cluster_template_ids is not defined or template.id not in cluster_template_ids
   ansible.builtin.uri:
     url: "{{ publish_templates_cluster_api_endpoint }}"
-    validate_certs: "{{ publish_templates_validate_certs | default(true) | bool }}"
+    validate_certs: "{{ publish_templates_validate_certs | default(false) | bool }}"
     method: POST
     headers:
       authorization: Bearer {{ osac_fulfillment_service_token }}

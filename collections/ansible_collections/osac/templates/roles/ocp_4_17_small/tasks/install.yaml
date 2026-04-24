@@ -27,6 +27,30 @@
     name: "{{ (install_step_pre_install_hook_override | default(install_step_pre_install_hook_default)).name }}"
     tasks_from: "{{ (install_step_pre_install_hook_override | default(install_step_pre_install_hook_default)).tasks_from }}"
 
+- name: Build BareMetalPool hostSets
+  ansible.builtin.set_fact:
+    baremetalpool_host_sets: >-
+      {{ baremetalpool_host_sets | default([]) + [{
+        'hostType': item.resourceClass,
+        'replicas': item.numberOfNodes | int
+      }] }}
+  loop: "{{ cluster_order.spec.nodeRequests | unique(attribute='resourceClass') }}"
+
+- name: Step - Create BareMetalPool
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: osac.openshift.io/v1alpha1
+      kind: BareMetalPool
+      metadata:
+        name: "{{ cluster_order.metadata.name }}"
+        namespace: "{{ lookup('env', 'POD_NAMESPACE') }}"
+        labels:
+          clusterorder: "{{ cluster_order.metadata.name }}"
+      spec:
+        hostSets: "{{ baremetalpool_host_sets }}"
+  register: baremetalpool_response
+
 - name: Step - Create hosted cluster
   ansible.builtin.include_role:
     name: "{{ (install_step_hosted_cluster_override | default(install_step_hosted_cluster_default)).name }}"
@@ -39,17 +63,17 @@
       pull_secret: "{{ template_parameters.pull_secret }}"
       ssh_public_key: "{{ template_parameters.ssh_public_key }}"
     hosted_cluster_node_requests: "{{ cluster_order.spec.nodeRequests | unique(attribute='resourceClass') }}"
+    hosted_cluster_baremetalpool_uid: "{{ baremetalpool_response.result.metadata.uid }}"
     hosted_cluster_state: present
 
-- name: Step - Create cluster infrastructure
-  ansible.builtin.include_role:
-    name: "{{ (install_step_cluster_infra_override | default(install_step_cluster_infra_default)).name }}"
-    tasks_from: "{{ (install_step_cluster_infra_override | default(install_step_cluster_infra_default)).tasks_from }}"
-  vars:
-    cluster_infra_state: present
-    cluster_infra_name: "{{ cluster_order.metadata.name }}"
-    cluster_infra_namespace: "{{ cluster_working_namespace }}"
-    cluster_infra_node_requests: "{{ cluster_order.spec.nodeRequests | unique(attribute='resourceClass') }}"
+#- name: Step - Create cluster infrastructure
+#  ansible.builtin.include_role:
+#    name: "{{ (install_step_cluster_infra_override | default(install_step_cluster_infra_default)).name }}"
+#    tasks_from: "{{ (install_step_cluster_infra_override | default(install_step_cluster_infra_default)).tasks_from }}"
+#  vars:
+#    cluster_infra_state: present
+#    cluster_infra_name: "{{ cluster_order.metadata.name }}"
+#    cluster_infra_baremetalpool_uid: "{{ baremetalpool_response.result.metadata.uid }}"
 
 - name: Step - Configure port forwarding
   ansible.builtin.include_role:
