@@ -7,8 +7,9 @@ argument_specs:
         default: "linux"
         description: >
           OS family for the guest VM. Read from ComputeInstance spec.guestOSFamily field,
-          defaults to 'linux'. The 'linux' profile uses cloud-init / SSH defaults; 'windows'
-          applies Windows sizing defaults, sysprep, Hyper-V / clock domain spec, and matching
+          defaults to 'linux'. Unrecognized values (including typos) fall back to the 'linux'
+          profile. The 'linux' profile uses cloud-init / SSH defaults; 'windows' applies
+          Windows sizing defaults, sysprep, Hyper-V / clock domain spec, and matching
           delete cleanup.
       compute_instance:
         type: dict

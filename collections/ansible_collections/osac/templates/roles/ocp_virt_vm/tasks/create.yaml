@@ -14,6 +14,14 @@
   ansible.builtin.set_fact:
     guest_os_family: "{{ compute_instance.spec.guestOSFamily | default(guest_os_family) }}"
 
+- name: Warn on unrecognized guest OS family
+  ansible.builtin.debug:
+    msg: >-
+      WARNING: Unrecognized guestOSFamily '{{ guest_os_family }}'.
+      Falling back to linux defaults.
+      Supported values: linux, windows
+  when: guest_os_family not in ['linux', 'windows']
+
 - name: Determine target namespace for VM resources
   ansible.builtin.set_fact:
     compute_instance_target_namespace: "{{ (compute_instance.metadata.annotations | default({})).get('osac.openshift.io/subnet-target-namespace', tenant_target_namespace) }}"
