@@ -4,8 +4,6 @@ aap:
     name: "osac-aap"
     controller:
       disabled: false
-    eda:
-      disabled: true
     hub:
       disabled: true
     lightspeed:
