@@ -136,6 +136,8 @@
     namespace: openshift-operators
   register: _all_csvs
 
+# TEMPORARY WORKAROUND: Remove this assertion once RHCL v1.4.0 compatibility
+# with SM is resolved and version pinning is no longer needed.
 - name: Assert no v1.4.0 CSVs installed
   ansible.builtin.assert:
     that:

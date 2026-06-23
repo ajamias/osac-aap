@@ -99,11 +99,12 @@
         - _cert_manager_sub.resources[0].status.installedCSV is defined
 
 # --- Step 2: Service Mesh 3.2 (MUST be before RHCL) ---
-# OCP Ingress Operator pre-creates a SM subscription on 'stable' channel and
-# continuously reconciles it (via ingress.operator.openshift.io/owned annotation).
-# We must scale down the Ingress Operator, replace the subscription without the
-# owned annotation, then scale it back up. Without this, any channel/CSV change
-# is overwritten within seconds.
+# TEMPORARY WORKAROUND: OCP Ingress Operator pre-creates a SM subscription on
+# 'stable' channel and continuously reconciles it (ingress.operator.openshift.io/owned).
+# We scale down the Ingress Operator for the entire operator install phase, replace
+# the subscription without the owned annotation, then scale it back up at the end.
+# Remove once RHCL v1.4.0 compatibility with SM is resolved and SM version pinning
+# is no longer needed. See: https://access.redhat.com/solutions/7097633
 
 - name: Scale down Ingress Operator (prevents SM subscription override)
   kubernetes.core.k8s:
@@ -193,6 +194,11 @@
   when: "'v3.2' not in item.metadata.name"
   ignore_errors: true
 
+# TEMPORARY WORKAROUND: RHCL v1.4.0 breaks MaaS auth enforcement (Envoy
+# allow_on_headers_stop_iteration not supported by SM 3.2/3.3). Tasks from here
+# through "Approve install plans and wait for RHCL CSV" implement a two-pass
+# install plan approval strategy to pin RHCL at v1.3.x. Remove once RHCL v1.4.0
+# compatibility with SM is resolved. See: https://access.redhat.com/solutions/7097633
 - name: Clear stale installedCSV from SM subscription
   environment:
     KUBECONFIG: "{{ admin_kubeconfig }}"
@@ -247,6 +253,9 @@
   changed_when: false
 
 # --- Step 3: Pre-create sub-operator subscriptions (v1.3.x, Manual) ---
+# TEMPORARY WORKAROUND (continued): Pre-creating sub-operator subscriptions with
+# Manual approval and startingCSV pins them to v1.3.1 before RHCL creates its own.
+# Remove once RHCL v1.4.0 compatibility is resolved.
 
 - name: Pre-create Authorino Subscription (v1.3.1, Manual)
   kubernetes.core.k8s:
@@ -314,6 +323,8 @@
   delay: 10
   until: _r is not failed
 
+# TEMPORARY WORKAROUND (continued): Two-pass install plan approval — approve
+# v1.3.x-only plans, delete v1.4.0-bundled plans so OLM regenerates clean ones.
 - name: Approve install plans and wait for sub-operator CSVs
   environment:
     KUBECONFIG: "{{ admin_kubeconfig }}"
@@ -375,6 +386,8 @@
   delay: 10
   until: _r is not failed
 
+# TEMPORARY WORKAROUND (continued): Final pass — approve remaining v1.3.x plans
+# for RHCL itself. End of RHCL version pinning workaround block.
 - name: Approve install plans and wait for RHCL CSV
   environment:
     KUBECONFIG: "{{ admin_kubeconfig }}"
@@ -629,6 +642,7 @@
     or _dsc.resources | length == 0
     or _dsc.resources[0].status.phase | default('') != 'Ready'
 
+# TEMPORARY WORKAROUND (end): Restore Ingress Operator after version-pinned install.
 - name: Scale up Ingress Operator
   kubernetes.core.k8s:
     kubeconfig: "{{ admin_kubeconfig }}"
